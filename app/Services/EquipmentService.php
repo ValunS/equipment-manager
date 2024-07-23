@@ -47,8 +47,10 @@ class EquipmentService
                 $results['errors'][$key] = ['message' => $e->getMessage()];
             }
         }
-        if (empty($results['errors'])) {
+
+        if (!empty($results['errors'])) {
             DB::rollBack();
+            return $results; //ретурн без коммита изменений
         }
 
         DB::commit();
@@ -98,7 +100,13 @@ class EquipmentService
      */
     private function validateSerialNumber(string $mask, string $serialNumber): bool
     {
-        $length = strlen($mask);
+        $length_serialNumber = strlen($serialNumber);
+        $length_mask = strlen($mask);
+
+        if ($length_serialNumber != $length_mask) {
+            return false;
+        }
+
         $mask_array_rules = [
             'N_mask' => ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
             'A_mask' => ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
@@ -106,7 +114,7 @@ class EquipmentService
             'X_mask' => ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
             'Z_mask' => ['-', '_', '@']];
 
-        for ($i = 0; $i < $length; $i++) {
+        for ($i = 0; $i < $length_mask; $i++) {
             $mask_char = $mask[$i];
             if (!in_array($serialNumber[$i], $mask_array_rules[$mask_char . '_mask'])) {
                 return false;

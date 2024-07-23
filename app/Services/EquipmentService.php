@@ -20,26 +20,26 @@ class EquipmentService
     {
         $results = ['errors' => [], 'success' => []];
 
-        foreach ($data as $key => $item) {
+        foreach ($data as $key => $equipment) {
             try {
                 DB::beginTransaction();
 
-                $equipmentType = EquipmentType::findOrFail($item['equipment_type_id']);
+                $equipmentType = EquipmentType::findOrFail($equipment['equipment_type_id']);
 
                 // Проверка соответствия серийного номера маске
-                if (!$this->validateSerialNumber($equipmentType->mask, $item['serial_number'])) {
+                if (!$this->validateSerialNumber($equipmentType->mask, $equipment['serial_number'])) {
                     throw new Exception("Серийный номер не соответствует маске типа оборудования.");
                 }
 
                 // Проверка уникальности серийного номера в связке с типом оборудования
-                if ($this->isSerialNumberExists($item['equipment_type_id'], $item['serial_number'])) {
+                if ($this->isSerialNumberExists($equipment['equipment_type_id'], $equipment['serial_number'])) {
                     throw new Exception("Оборудование с таким серийным номером уже существует для данного типа.");
                 }
 
                 $equipment = Equipment::create([
-                    'equipment_type_id' => $item['equipment_type_id'],
-                    'serial_number' => $item['serial_number'],
-                    'desc' => $item['desc'],
+                    'equipment_type_id' => $equipment['equipment_type_id'],
+                    'serial_number' => $equipment['serial_number'],
+                    'desc' => $equipment['desc'],
                 ]);
 
                 DB::commit();

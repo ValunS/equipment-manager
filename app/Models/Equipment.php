@@ -5,11 +5,11 @@ namespace App\Models;
 use App\Models\EquipmentType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-// Импортируйте модель EquipmentType
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Equipment extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * Атрибуты, доступные для массового заполнения.

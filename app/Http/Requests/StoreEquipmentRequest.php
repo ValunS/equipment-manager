@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreEquipmentRequest extends FormRequest
 {
@@ -25,7 +26,15 @@ class StoreEquipmentRequest extends FormRequest
     {
         return [
             '*.equipment_type_id' => 'required|exists:equipment_types,id',
-            '*.serial_number' => 'required|string|max:255|distinct|unique:equipment,serial_number,NULL,id,equipment_type_id,' . $this->input('*.equipment_type_id'),
+            '*.serial_number' => [
+                'required',
+                'string',
+                'max:255',
+                'distinct',
+                Rule::unique('equipment')->where(function ($query) {
+                    return $query->where('equipment_type_id', $this->input('*.equipment_type_id'));
+                }),
+            ],
             '*.desc' => 'nullable|string',
         ];
     }

@@ -20,9 +20,9 @@ class EquipmentService
     {
         $results = ['errors' => [], 'success' => []];
 
+        DB::beginTransaction();
         foreach ($data as $key => $equipment) {
             try {
-                DB::beginTransaction();
 
                 $equipmentType = EquipmentType::findOrFail($equipment['equipment_type_id']);
 
@@ -42,15 +42,51 @@ class EquipmentService
                     'desc' => $equipment['desc'],
                 ]);
 
-                DB::commit();
                 $results['success'][$key] = new EquipmentResource($equipment->load('type'));
             } catch (Exception $e) {
-                DB::rollBack();
                 $results['errors'][$key] = ['message' => $e->getMessage()];
             }
         }
+        if (empty($results['errors'])) {
+            DB::rollBack();
+        }
 
+        DB::commit();
         return $results;
+    }
+
+    /**
+     * Редактирование оборудования.
+     *
+     * @param Equipment $equipment Модель оборудования для обновления
+     * @param array $data Данные для обновления.
+     * @return EquipmentResource Обновленная модель оборудования
+     * @throws Exception
+     */
+    public function updateEquipment(Equipment $equipment, array $data): EquipmentResource
+    {
+        try {
+            DB::beginTransaction();
+
+            $equipmentType = EquipmentType::findOrFail($data['equipment_type_id']);
+
+            // Проверка соответствия серийного номера маске
+            if (!$this->validateSerialNumber($equipmentType->mask, $data['serial_number'])) {
+                throw new Exception("Серийный номер не соответствует маске типа оборудования.");
+            }
+
+            $equipment->update([
+                'equipment_type_id' => $data['equipment_type_id'],
+                'serial_number' => $data['serial_number'],
+                'desc' => $data['desc'],
+            ]);
+
+            DB::commit();
+            return new EquipmentResource($equipment->fresh()->load('type'));
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e; // Перебрасываем исключение для обработки в контроллере
+        }
     }
 
     /**
@@ -62,13 +98,21 @@ class EquipmentService
      */
     private function validateSerialNumber(string $mask, string $serialNumber): bool
     {
-        return preg_match('/^' . strtr($mask, [
-            'N' => '[0-9]',
-            'A' => '[A-Z]',
-            'a' => '[a-z]',
-            'X' => '[A-Z0-9]',
-            'Z' => '[-_@]',
-        ]) . '$/', $serialNumber);
+        $length = strlen($mask);
+        $mask_array_rules = [
+            'N_mask' => ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+            'A_mask' => ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+            'a_mask' => ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
+            'X_mask' => ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+            'Z_mask' => ['-', '_', '@']];
+
+        for ($i = 0; $i < $length; $i++) {
+            $mask_char = $mask[$i];
+            if (!in_array($serialNumber[$i], $mask_array_rules[$mask_char . '_mask'])) {
+                return false;
+            };
+        }
+        return true;
     }
 
     /**

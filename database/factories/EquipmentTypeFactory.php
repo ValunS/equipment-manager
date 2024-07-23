@@ -13,9 +13,25 @@ class EquipmentTypeFactory extends Factory
      */
     public function definition()
     {
+
         return [
             'name' => $this->faker->unique()->words(2, true), // генерирует уникальное имя из 2 слов
-            'mask' => $this->faker->regexify('[A-Z]{2}[0-9]{4}[A-Z]{3}'), // генерирует маску по шаблону
+            'mask' => $this->generateMask(), // генерирует маску по шаблону
         ];
+    }
+
+    /**
+     * Генерация маски.
+     *
+     * @return string
+     */
+    private function generateMask()
+    {
+        $maskParts = "";
+        for ($i = 0; $i < 10; $i++) { // Генерируем 10 символов маски
+            $maskParts .= $this->faker->randomElement(['N', 'A', 'a', 'X', 'Z']);
+        }
+
+        return $maskParts;
     }
 }

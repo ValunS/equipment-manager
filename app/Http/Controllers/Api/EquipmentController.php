@@ -71,9 +71,10 @@ class EquipmentController extends Controller
      * @param StoreEquipmentRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(StoreEquipmentRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
+        //раз вам надо без выхода из цикла, то без валидации, хотя реквест на стор есть
+        $data = $request->all(); //->validated();
 
         $results = $this->equipmentService->createEquipment($data);
 
@@ -90,7 +91,7 @@ class EquipmentController extends Controller
     public function update(UpdateEquipmentRequest $request, Equipment $equipment)
     {
         $data = $request->validated();
-        $equipment->update($data);
+        $equipment = $this->equipmentService->updateEquipment($equipment, $data);
 
         return new EquipmentResource($equipment->refresh()->load('type')); // Обновление и загрузка отношения
     }

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+
 // Для проверки уникальности
 
 class UpdateEquipmentRequest extends FormRequest

@@ -37,19 +37,32 @@ class EquipmentController extends Controller
      */
     public function index(Request $request)
     {
-        $equipment = Equipment::with('type'); // Загрузка отношения "тип оборудования"
+        $equipment = Equipment::with('type');
 
-        // Поиск по полям
-        if ($request->has('q')) {
-            $searchTerm = $request->input('q');
-            $equipment->where(function ($query) use ($searchTerm) {
-                $query->where('serial_number', 'like', "%$searchTerm%")
-                    ->orWhere('desc', 'like', "%$searchTerm%")
-                    ->orWhereHas('type', function ($query) use ($searchTerm) { // Поиск по имени типа
-                        $query->where('name', 'like', "%$searchTerm%");
-                    });
-            });
-        }
+        $equipment->where(function ($query) use ($request) {
+            if ($request->filled('q')) {
+                $searchTerm = $request->input('q');
+                $query->where(function ($subquery) use ($searchTerm) {
+                    $subquery->where('serial_number', 'like', "%$searchTerm%")
+                        ->orWhere('desc', 'like', "%$searchTerm%")
+                        ->orWhereHas('type', function ($subquery) use ($searchTerm) {
+                            $subquery->where('name', 'like', "%$searchTerm%");
+                        });
+                });
+            }
+
+            if ($request->filled('serial_number')) {
+                $query->where('serial_number', 'like', '%' . $request->input('serial_number') . '%');
+            }
+
+            if ($request->filled('desc')) {
+                $query->where('desc', 'like', '%' . $request->input('desc') . '%');
+            }
+
+            if ($request->filled('equipment_type_id')) {
+                $query->where('equipment_type_id', $request->input('equipment_type_id'));
+            }
+        });
 
         return EquipmentResource::collection($equipment->paginate(10));
     }

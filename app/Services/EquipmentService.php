@@ -27,7 +27,7 @@ class EquipmentService
                 $equipmentType = EquipmentType::findOrFail($equipment['equipment_type_id']);
 
                 // Проверка соответствия серийного номера маске
-                if (!$this->validateSerialNumber($equipmentType->mask, $equipment['serial_number'])) {
+                if (!$this->isValidSerialNumber($equipmentType->mask, $equipment['serial_number'])) {
                     throw new Exception("Серийный номер не соответствует маске типа оборудования.");
                 }
 
@@ -73,7 +73,8 @@ class EquipmentService
             $equipmentType = EquipmentType::findOrFail($data['equipment_type_id']);
 
             // Проверка соответствия серийного номера маске
-            if (!$this->validateSerialNumber($equipmentType->mask, $data['serial_number'])) {
+
+            if (!$this->isValidSerialNumber($equipmentType->mask, $data['serial_number'])) {
                 throw new Exception("Серийный номер не соответствует маске типа оборудования.");
             }
 
@@ -98,29 +99,36 @@ class EquipmentService
      * @param string $serialNumber Серийный номер.
      * @return bool True, если серийный номер валиден, иначе false.
      */
-    private function validateSerialNumber(string $mask, string $serialNumber): bool
+    private function isValidSerialNumber(string $mask, string $serialNumber): bool
     {
-        $length_serialNumber = strlen($serialNumber);
-        $length_mask = strlen($mask);
+        $regex = $this->generateRegexFromMask($mask);
+        return preg_match($regex, $serialNumber) === 1;
+    }
 
-        if ($length_serialNumber != $length_mask) {
-            return false;
+    /**
+     * Генерация регулярного выражения из маски серийного номера.
+     *
+     * @param string $mask Маска серийного номера.
+     * @return string Регулярное выражение.
+     */
+    private function generateRegexFromMask(string $mask): string
+    {
+        $regex = '/^';
+        $maskRules = [
+            'N' => '[0-9]',
+            'A' => '[A-Z]',
+            'a' => '[a-z]',
+            'X' => '[A-Za-z0-9]',
+            'Z' => '[-_@]',
+        ];
+
+        for ($i = 0; $i < strlen($mask); $i++) {
+            $maskChar = $mask[$i];
+            $regex .= $maskRules[$maskChar] ?? preg_quote($maskChar);
         }
 
-        $mask_array_rules = [
-            'N_mask' => ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
-            'A_mask' => ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
-            'a_mask' => ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
-            'X_mask' => ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
-            'Z_mask' => ['-', '_', '@']];
-
-        for ($i = 0; $i < $length_mask; $i++) {
-            $mask_char = $mask[$i];
-            if (!in_array($serialNumber[$i], $mask_array_rules[$mask_char . '_mask'])) {
-                return false;
-            };
-        }
-        return true;
+        $regex .= '$/';
+        return $regex;
     }
 
     /**

@@ -57,7 +57,7 @@ class EquipmentController extends Controller
             }
 
             if ($request->filled('mask')) {
-                $query->orWhereHas('type', function ($subquery) use ($request) {
+                $query->WhereHas('type', function ($subquery) use ($request) {
                     $subquery->where('mask', 'like', '%' . $request->input('mask') . '%');
                 });
             }

@@ -46,13 +46,20 @@ class EquipmentController extends Controller
                     $subquery->where('serial_number', 'like', "%$searchTerm%")
                         ->orWhere('desc', 'like', "%$searchTerm%")
                         ->orWhereHas('type', function ($subquery) use ($searchTerm) {
-                            $subquery->where('name', 'like', "%$searchTerm%");
+                            $subquery->where('name', 'like', "%$searchTerm%")
+                                ->orWhere('mask', 'like', "%$searchTerm%");
                         });
                 });
             }
 
             if ($request->filled('serial_number')) {
                 $query->where('serial_number', 'like', '%' . $request->input('serial_number') . '%');
+            }
+
+            if ($request->filled('mask')) {
+                $query->orWhereHas('type', function ($subquery) use ($request) {
+                    $subquery->where('mask', 'like', '%' . $request->input('mask') . '%');
+                });
             }
 
             if ($request->filled('desc')) {

@@ -19,7 +19,7 @@ class StoreEquipmentTypeRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                'regex:/^([ANaXZ\-@_]+)$/', // Проверка допустимых символов
+                'regex:/^[ANaXZ]+$/', // Проверка допустимых символов
             ],
         ];
     }
